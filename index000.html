@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>玉米测土配方施肥计算 (青贮/籽实)</title>
+    <title>青贮玉米测土配方施肥计算</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,8 +45,8 @@
 </head>
 <body>
 <div class="container">
-    <h1>🌽 玉米测土配方施肥推荐系统</h1>
-    <div class="subtitle">依据文献《青贮玉米施肥的理论和技术》2018 · 级别间线性插值 · 支持青贮/籽实</div>
+    <h1>🌽 青贮玉米测土配方施肥推荐系统</h1>
+    <div class="subtitle">依据文献《青贮玉米施肥的理论和技术》2018 · 级别间线性插值（无需额外参数）</div>
 
     <div class="grid">
         <!-- 输入侧边栏 -->
@@ -54,13 +54,7 @@
             <label for="region">🌍 选择地区</label>
             <select id="region"></select>
 
-            <label for="cropType">🌱 作物类型</label>
-            <select id="cropType">
-                <option value="青贮">青贮玉米</option>
-                <option value="籽实">籽实玉米</option>
-            </select>
-
-            <!-- 氮素标签动态修改 -->
+            <!-- 氮素标签将动态修改 -->
             <label for="soilN" id="soilNLabel">🔬 测土氮 (mg/kg)</label>
             <input type="number" id="soilN" step="0.1" value="72">
 
@@ -70,8 +64,8 @@
             <label for="soilK">🔬 测土有效钾 (mg/kg)</label>
             <input type="number" id="soilK" step="0.1" value="120">
 
-            <label for="targetYield">🎯 目标产量 (斤/亩) <span id="yieldRangeHint" style="font-weight:400;color:#718096;">(4000~16000)</span></label>
-            <input type="number" id="targetYield" step="10" value="8000" min="4000" max="16000">
+            <label for="targetYield">🎯 目标产量 (t/hm²) <span style="font-weight:400;color:#718096;">(30~120)</span></label>
+            <input type="number" id="targetYield" step="1" value="60" min="30" max="120">
 
             <button class="btn-calc" id="calcBtn">🚀 计算推荐施肥量</button>
             <div id="errorMsg" class="error-msg"></div>
@@ -104,12 +98,13 @@
             </details>
         </div>
     </div>
-    <div class="footer">数据来源：《青贮玉米施肥的理论和技术》2018 · 纯前端 v4.1 (修复缓存错误)</div>
+    <div class="footer">数据来源：《青贮玉米施肥的理论和技术》2018 · 纯前端版本 v3.1 (动态氮素指标)</div>
 </div>
 
 <script>
     // ================================================================
-    // 1. 数据（阈值 + 推荐）
+    // 1. 数据（已按Excel原始区间正确提取下限）
+    //    每个数组长度为7，分别对应级别7~1的下限，null表示-∞
     // ================================================================
 
     // ----- 氮阈值 (索引0:级别7, 1:级别6, ..., 6:级别1) -----
@@ -166,73 +161,36 @@
         "广东": [null, 11, 22, 42, 83, 165, 326]
     };
 
-    // ----- 推荐数据（氮）按类型分组 -----
-    const nRecData = {
-        "籽实": [
-            { yield: 6, level7: 207, level6: 173, level5: 138, level4: 104, level3: 69, level2: 35, level1: 0 },
-            { yield: 7.5, level7: 259, level6: 216, level5: 173, level4: 129, level3: 86, level2: 43, level1: 0 },
-            { yield: 9, level7: 311, level6: 259, level5: 207, level4: 155, level3: 104, level2: 52, level1: 0 },
-            { yield: 10.5, level7: 362, level6: 302, level5: 242, level4: 181, level3: 121, level2: 60, level1: 0 },
-            { yield: 12, level7: 414, level6: 345, level5: 276, level4: 207, level3: 138, level2: 69, level1: 0 },
-            { yield: 13.5, level7: 466, level6: 388, level5: 311, level4: 233, level3: 155, level2: 78, level1: 0 },
-            { yield: 15, level7: 518, level6: 431, level5: 345, level4: 259, level3: 173, level2: 86, level1: 0 }
-        ],
-        "青贮": [
-            { yield: 30, level7: 180, level6: 150, level5: 120, level4: 90, level3: 60, level2: 30, level1: 0 },
-            { yield: 45, level7: 270, level6: 225, level5: 180, level4: 135, level3: 90, level2: 45, level1: 0 },
-            { yield: 60, level7: 360, level6: 300, level5: 240, level4: 180, level3: 120, level2: 60, level1: 0 },
-            { yield: 75, level7: 450, level6: 375, level5: 300, level4: 225, level3: 150, level2: 75, level1: 0 },
-            { yield: 90, level7: 540, level6: 450, level5: 360, level4: 270, level3: 180, level2: 90, level1: 0 },
-            { yield: 105, level7: 630, level6: 525, level5: 420, level4: 315, level3: 210, level2: 105, level1: 0 },
-            { yield: 120, level7: 720, level6: 600, level5: 480, level4: 360, level3: 240, level2: 120, level1: 0 }
-        ]
-    };
+    // ----- 推荐数据（仅青贮）-----
+    const nRecData = [
+        { yield: 30, level7: 180, level6: 150, level5: 120, level4: 90, level3: 60, level2: 30, level1: 0 },
+        { yield: 45, level7: 270, level6: 225, level5: 180, level4: 135, level3: 90, level2: 45, level1: 0 },
+        { yield: 60, level7: 360, level6: 300, level5: 240, level4: 180, level3: 120, level2: 60, level1: 0 },
+        { yield: 75, level7: 450, level6: 375, level5: 300, level4: 225, level3: 150, level2: 75, level1: 0 },
+        { yield: 90, level7: 540, level6: 450, level5: 360, level4: 270, level3: 180, level2: 90, level1: 0 },
+        { yield: 105, level7: 630, level6: 525, level5: 420, level4: 315, level3: 210, level2: 105, level1: 0 },
+        { yield: 120, level7: 720, level6: 600, level5: 480, level4: 360, level3: 240, level2: 120, level1: 0 }
+    ];
+    const pRecData = [
+        { yield: 30, level7: 135, level6: 113, level5: 90, level4: 68, level3: 45, level2: 23, level1: 0 },
+        { yield: 45, level7: 203, level6: 169, level5: 135, level4: 101, level3: 68, level2: 34, level1: 0 },
+        { yield: 60, level7: 270, level6: 225, level5: 180, level4: 135, level3: 90, level2: 45, level1: 0 },
+        { yield: 75, level7: 338, level6: 281, level5: 225, level4: 169, level3: 113, level2: 56, level1: 0 },
+        { yield: 90, level7: 405, level6: 338, level5: 270, level4: 203, level3: 135, level2: 68, level1: 0 },
+        { yield: 105, level7: 473, level6: 394, level5: 315, level4: 236, level3: 158, level2: 79, level1: 0 },
+        { yield: 120, level7: 540, level6: 450, level5: 360, level4: 270, level3: 180, level2: 90, level1: 0 }
+    ];
+    const kRecData = [
+        { yield: 30, level7: 126, level6: 105, level5: 84, level4: 63, level3: 42, level2: 21, level1: 0 },
+        { yield: 45, level7: 189, level6: 158, level5: 126, level4: 95, level3: 63, level2: 32, level1: 0 },
+        { yield: 60, level7: 252, level6: 210, level5: 168, level4: 126, level3: 84, level2: 42, level1: 0 },
+        { yield: 75, level7: 315, level6: 263, level5: 210, level4: 158, level3: 105, level2: 53, level1: 0 },
+        { yield: 90, level7: 378, level6: 315, level5: 252, level4: 189, level3: 126, level2: 63, level1: 0 },
+        { yield: 105, level7: 441, level6: 368, level5: 294, level4: 221, level3: 147, level2: 74, level1: 0 },
+        { yield: 120, level7: 504, level6: 420, level5: 336, level4: 252, level3: 168, level2: 84, level1: 0 }
+    ];
 
-    // ----- 推荐数据（磷）按类型分组 -----
-    const pRecData = {
-        "籽实": [
-            { yield: 6, level7: 144, level6: 120, level5: 96, level4: 72, level3: 48, level2: 24, level1: 0 },
-            { yield: 7.5, level7: 180, level6: 150, level5: 120, level4: 90, level3: 60, level2: 30, level1: 0 },
-            { yield: 9, level7: 216, level6: 180, level5: 144, level4: 108, level3: 72, level2: 36, level1: 0 },
-            { yield: 10.5, level7: 252, level6: 210, level5: 168, level4: 126, level3: 84, level2: 42, level1: 0 },
-            { yield: 12, level7: 288, level6: 240, level5: 192, level4: 144, level3: 96, level2: 48, level1: 0 },
-            { yield: 13.5, level7: 324, level6: 270, level5: 216, level4: 162, level3: 108, level2: 54, level1: 0 },
-            { yield: 15, level7: 360, level6: 300, level5: 240, level4: 180, level3: 120, level2: 60, level1: 0 }
-        ],
-        "青贮": [
-            { yield: 30, level7: 135, level6: 113, level5: 90, level4: 68, level3: 45, level2: 23, level1: 0 },
-            { yield: 45, level7: 203, level6: 169, level5: 135, level4: 101, level3: 68, level2: 34, level1: 0 },
-            { yield: 60, level7: 270, level6: 225, level5: 180, level4: 135, level3: 90, level2: 45, level1: 0 },
-            { yield: 75, level7: 338, level6: 281, level5: 225, level4: 169, level3: 113, level2: 56, level1: 0 },
-            { yield: 90, level7: 405, level6: 338, level5: 270, level4: 203, level3: 135, level2: 68, level1: 0 },
-            { yield: 105, level7: 473, level6: 394, level5: 315, level4: 236, level3: 158, level2: 79, level1: 0 },
-            { yield: 120, level7: 540, level6: 450, level5: 360, level4: 270, level3: 180, level2: 90, level1: 0 }
-        ]
-    };
-
-    // ----- 推荐数据（钾）按类型分组 -----
-    const kRecData = {
-        "籽实": [
-            { yield: 6, level7: 151, level6: 126, level5: 101, level4: 76, level3: 50, level2: 25, level1: 0 },
-            { yield: 7.5, level7: 189, level6: 158, level5: 126, level4: 95, level3: 63, level2: 32, level1: 0 },
-            { yield: 9, level7: 227, level6: 189, level5: 151, level4: 113, level3: 76, level2: 38, level1: 0 },
-            { yield: 10.5, level7: 265, level6: 221, level5: 176, level4: 132, level3: 88, level2: 44, level1: 0 },
-            { yield: 12, level7: 302, level6: 252, level5: 202, level4: 151, level3: 101, level2: 50, level1: 0 },
-            { yield: 13.5, level7: 340, level6: 284, level5: 227, level4: 170, level3: 113, level2: 57, level1: 0 },
-            { yield: 15, level7: 378, level6: 315, level5: 252, level4: 189, level3: 126, level2: 63, level1: 0 }
-        ],
-        "青贮": [
-            { yield: 30, level7: 126, level6: 105, level5: 84, level4: 63, level3: 42, level2: 21, level1: 0 },
-            { yield: 45, level7: 189, level6: 158, level5: 126, level4: 95, level3: 63, level2: 32, level1: 0 },
-            { yield: 60, level7: 252, level6: 210, level5: 168, level4: 126, level3: 84, level2: 42, level1: 0 },
-            { yield: 75, level7: 315, level6: 263, level5: 210, level4: 158, level3: 105, level2: 53, level1: 0 },
-            { yield: 90, level7: 378, level6: 315, level5: 252, level4: 189, level3: 126, level2: 63, level1: 0 },
-            { yield: 105, level7: 441, level6: 368, level5: 294, level4: 221, level3: 147, level2: 74, level1: 0 },
-            { yield: 120, level7: 504, level6: 420, level5: 336, level4: 252, level3: 168, level2: 84, level1: 0 }
-        ]
-    };
-
-    // 构建查找结构 (返回 { yields, levels })
+    // 构建查找结构
     function buildRec(recArray) {
         const yields = recArray.map(item => item.yield);
         const levels = {};
@@ -242,19 +200,17 @@
         }
         return { yields, levels };
     }
+    const nitrogenRec = buildRec(nRecData);
+    const phosphorusRec = buildRec(pRecData);
+    const potassiumRec = buildRec(kRecData);
 
-    // 获取指定类型和元素的查找结构（每次重新构建，避免缓存污染）
-    function getRecLookup(type, dataObj) {
-        return buildRec(dataObj[type]);
-    }
-
-    const levelLabels = ["极低", "很低", "低", "中", "高", "很高", "极高"];
+    const levelLabels = ["极低", "很低", "低", "中", "高", "很高", "极高"]; // 级别7~1
 
     // ================================================================
     // 2. 核心逻辑
     // ================================================================
 
-    // 氮素指标映射
+    // ---------- 新增：氮素指标映射 ----------
     const nitrogenIndicatorMap = {
         "河套灌区": { name: "全氮", unit: "g/kg" },
         "安徽淮北": { name: "有机质", unit: "g/kg" },
@@ -266,9 +222,11 @@
         return nitrogenIndicatorMap[region] || defaultNitrogen;
     }
 
+    // 更新氮素标签
     function updateNitrogenLabel(region) {
         const info = getNitrogenIndicator(region);
-        document.getElementById('soilNLabel').textContent = '🔬 测土' + info.name + ' (' + info.unit + ')';
+        const label = document.getElementById('soilNLabel');
+        label.textContent = '🔬 测土' + info.name + ' (' + info.unit + ')';
     }
 
     function log(msg, isError = false) {
@@ -348,32 +306,19 @@
         return interpolated;
     }
 
-    // 主推荐函数
-    function recommend(region, soilN, soilP, soilK, targetYieldJinMu, cropType) {
+    function recommend(region, soilN, soilP, soilK, targetYield) {
         log('===== 开始计算 =====');
-        log(`地区: ${region}, 类型: ${cropType}, 测土N=${soilN}, P=${soilP}, K=${soilK}, 目标=${targetYieldJinMu} 斤/亩`);
-
-        const targetYieldTperHa = targetYieldJinMu * 0.0075;
-        log(`目标产量转换: ${targetYieldJinMu} 斤/亩 = ${targetYieldTperHa.toFixed(3)} t/ha`);
+        log(`地区: ${region}, 测土N=${soilN}, P=${soilP}, K=${soilK}, 目标=${targetYield}`);
 
         const nLevel = getLevel(region, soilN, nitrogenThreshold, '氮');
         const pLevel = getLevel(region, soilP, phosphorusThreshold, '磷');
         const kLevel = getLevel(region, soilK, potassiumThreshold, '钾');
 
-        // 获取各元素推荐查找结构（每次重新构建）
-        const nLookup = getRecLookup(cropType, nRecData);
-        const pLookup = getRecLookup(cropType, pRecData);
-        const kLookup = getRecLookup(cropType, kRecData);
+        const nRec = getInterpolatedRec(region, soilN, nLevel, targetYield, nitrogenRec, nitrogenThreshold, '氮');
+        const pRec = getInterpolatedRec(region, soilP, pLevel, targetYield, phosphorusRec, phosphorusThreshold, '磷');
+        const kRec = getInterpolatedRec(region, soilK, kLevel, targetYield, potassiumRec, potassiumThreshold, '钾');
 
-        const nRec_kg_ha = getInterpolatedRec(region, soilN, nLevel, targetYieldTperHa, nLookup, nitrogenThreshold, '氮');
-        const pRec_kg_ha = getInterpolatedRec(region, soilP, pLevel, targetYieldTperHa, pLookup, phosphorusThreshold, '磷');
-        const kRec_kg_ha = getInterpolatedRec(region, soilK, kLevel, targetYieldTperHa, kLookup, potassiumThreshold, '钾');
-
-        const nRec = nRec_kg_ha / 15;
-        const pRec = pRec_kg_ha / 15;
-        const kRec = kRec_kg_ha / 15;
-
-        log(`结果 (kg/亩): N=${nRec.toFixed(2)}, P=${pRec.toFixed(2)}, K=${kRec.toFixed(2)}`);
+        log(`结果: N=${nRec.toFixed(1)}, P=${pRec.toFixed(1)}, K=${kRec.toFixed(1)}`);
         log('===== 计算完成 =====');
         return { nRec, pRec, kRec, nLevel, pLevel, kLevel };
     }
@@ -392,6 +337,7 @@
             select.appendChild(opt);
         });
         if (regions.length) select.value = regions[0];
+        // 更新氮素标签
         updateNitrogenLabel(select.value);
     }
 
@@ -415,7 +361,7 @@
     }
 
     let chartInstance = null;
-    function updateChart(n, p, k, region, targetYieldJinMu, cropType) {
+    function updateChart(n, p, k, region, targetYield) {
         const ctx = document.getElementById('fertChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
         chartInstance = new Chart(ctx, {
@@ -423,7 +369,7 @@
             data: {
                 labels: ['N', 'P₂O₅', 'K₂O'],
                 datasets: [{
-                    label: '推荐施肥量 (kg/亩)',
+                    label: '推荐施肥量 (kg/hm²)',
                     data: [n, p, k],
                     backgroundColor: ['#2b6cb0','#dd6b20','#38a169'],
                     borderRadius: 6
@@ -434,21 +380,11 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    title: { display: true, text: `${region} · ${cropType}玉米 目标产量 ${targetYieldJinMu} 斤/亩`, font: { size: 14 } }
+                    title: { display: true, text: `${region} · 青贮玉米 目标产量 ${targetYield} t/hm²`, font: { size: 14 } }
                 },
-                scales: { y: { beginAtZero: true, title: { display: true, text: 'kg/亩' } } }
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'kg/hm²' } } }
             }
         });
-    }
-
-    function updateYieldRangeHint() {
-        const cropType = document.getElementById('cropType').value;
-        const hint = document.getElementById('yieldRangeHint');
-        if (cropType === '青贮') {
-            hint.textContent = '(4000~16000 斤/亩)';
-        } else {
-            hint.textContent = '(800~2000 斤/亩)';
-        }
     }
 
     function updateResults() {
@@ -460,7 +396,6 @@
 
         try {
             const region = document.getElementById('region').value;
-            const cropType = document.getElementById('cropType').value;
             const soilN = parseFloat(document.getElementById('soilN').value);
             const soilP = parseFloat(document.getElementById('soilP').value);
             const soilK = parseFloat(document.getElementById('soilK').value);
@@ -469,15 +404,15 @@
             if (isNaN(soilN) || isNaN(soilP) || isNaN(soilK) || isNaN(targetYield)) {
                 throw new Error('请输入有效的数值');
             }
-            if (targetYield <= 0) {
-                throw new Error('目标产量必须大于0');
+            if (targetYield < 30 || targetYield > 120) {
+                throw new Error('目标产量建议在 30 ~ 120 t/hm² 之间');
             }
 
-            const result = recommend(region, soilN, soilP, soilK, targetYield, cropType);
+            const result = recommend(region, soilN, soilP, soilK, targetYield);
 
-            document.getElementById('nVal').textContent = result.nRec.toFixed(2) + ' kg/亩';
-            document.getElementById('pVal').textContent = result.pRec.toFixed(2) + ' kg/亩';
-            document.getElementById('kVal').textContent = result.kRec.toFixed(2) + ' kg/亩';
+            document.getElementById('nVal').textContent = result.nRec.toFixed(1) + ' kg/hm²';
+            document.getElementById('pVal').textContent = result.pRec.toFixed(1) + ' kg/hm²';
+            document.getElementById('kVal').textContent = result.kRec.toFixed(1) + ' kg/hm²';
 
             document.getElementById('nSub').textContent = `级别 ${result.nLevel} (${levelLabels[7 - result.nLevel]})`;
             document.getElementById('pSub').textContent = `级别 ${result.pLevel} (${levelLabels[7 - result.pLevel]})`;
@@ -485,6 +420,7 @@
 
             const tbody = document.getElementById('levelBody');
             tbody.innerHTML = '';
+            // 注意：表格中第一列保留“氮 (N)”、“磷 (P₂O₅)”、“钾 (K₂O)”，不加单位
             const rows = [
                 ['氮 (N)', soilN, result.nLevel, levelLabels[7 - result.nLevel]],
                 ['磷 (P₂O₅)', soilP, result.pLevel, levelLabels[7 - result.pLevel]],
@@ -500,7 +436,7 @@
                 tbody.appendChild(tr);
             });
 
-            updateChart(result.nRec, result.pRec, result.kRec, region, targetYield, cropType);
+            updateChart(result.nRec, result.pRec, result.kRec, region, targetYield);
             updateThresholdTable(region);
 
         } catch (e) {
@@ -514,21 +450,16 @@
         populateRegions();
         const firstRegion = document.getElementById('region').value;
         updateThresholdTable(firstRegion);
-        updateYieldRangeHint();
         updateResults();
 
         document.getElementById('calcBtn').addEventListener('click', updateResults);
+        // 地区切换时更新氮素标签并重新计算
         document.getElementById('region').addEventListener('change', function() {
             updateNitrogenLabel(this.value);
             updateResults();
         });
-        document.getElementById('cropType').addEventListener('change', function() {
-            updateYieldRangeHint();
-            updateResults();
-        });
         document.querySelectorAll('input').forEach(el => {
             el.addEventListener('change', updateResults);
-            el.addEventListener('input', updateResults);
         });
     });
 </script>
